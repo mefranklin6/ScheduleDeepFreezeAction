@@ -54,7 +54,7 @@ if (!($DesiredState -in $StateOptions)) {
     Quit
 }
 
-
+$DFStatus = $null
 $DFStatus =
 Invoke-Command -ComputerName $PC -ScriptBlock {
     (Get-ItemProperty "HKLM:\SOFTWARE\WOW6432Node\Faronics\Deep Freeze 6\" -Name "DF Status")."DF Status"
@@ -62,6 +62,10 @@ Invoke-Command -ComputerName $PC -ScriptBlock {
 
 if ($DFStatus -eq $DesiredState) {
     Log "ERROR: $PC is already $DFstatus"
+    Quit
+}
+elseif ($DFStatus -eq $null) {
+    Log "FATAL: No Deep Freeze detected on $PC"
     Quit
 }
 
