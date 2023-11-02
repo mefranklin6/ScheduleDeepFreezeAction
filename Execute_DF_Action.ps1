@@ -5,13 +5,19 @@ Param(
     [Parameter(Mandatory=$true)]
     [string]$DesiredState,
 
+    [Parameter(Mandatory = $true)]
+    [string]$EncryptedPasswordLocation,
+
     [Parameter()]
     [string]$LogLocation = "C:\Temp\$PC-DeepFreeze.txt",
 
-    [Parameter(Mandatory = $true)]
-    [string]$EncryptedPasswordLocation
-)
+    [Parameter()]
+    [bool]$Force = $false,
 
+    [Parameter()]
+    [int]$RebootTimeout = 60
+
+)
 
 
 function Log ($message) {
@@ -23,71 +29,75 @@ function Log ($message) {
     }
 
 
-$Success = $null
+# measures success of the script
+[bool]$ScriptResult = $false
 
 function Quit {
-    $script:Success = $false
-    Log "DeepFreezeActionResult: $Success"
+    $script:ScriptResult = $false
+    Log "DeepFreezeActionResult: $ScriptResult"
     Exit
 }
 
 
-$StateOptions = @('Frozen', 'Thawed', 'Thawed and Locked')
-if (!($DesiredState -in $StateOptions)) {
-    Log "FATAL: $DesiredState is not a valid state"
-    Log "Valid States are '$StateOptions'"
-    Quit
-}
-
-$loadedEncryptedPassword = Get-Content -Path 'C:\DeepFreezePassword.txt'
-$loadedSecureString = ConvertTo-SecureString -String $loadedEncryptedPassword
-$DFPassword = (New-Object PSCredential "user", $loadedSecureString).GetNetworkCredential().Password
-
-
-
-$ClearToProceede = $false
+#### Verifications ####
 
 if (!(Test-Connection -ComputerName $PC -Count 1)){
     Log "FATAL: $PC is not online or wrong name!"
     Quit
 }
 
-$LoggedInUser = $null
-$LoggedInUser = Get-CimInstance -Class win32_computersystem -ComputerName $PC | Select-Object username
-$LoggedInUser = $LoggedInUser -split '\\'
-$LoggedInUser = $LoggedInUser[1] -replace '}'
 
-
-if ($LoggedInUser -eq '') {
-    Log "INFO: No one is logged in to $PC"
-    $ClearToProceede = $true
-}
-elseif ($null -eq $LoggedInUser) {
-    Log 'FATAL: Can not find logged-in user'
+$StateOptions = @('Frozen', 'Thawed', 'Thawed and Locked')
+if (!($DesiredState -in $StateOptions)) {
+    Log "FATAL: $DesiredState is not a valid state"
+    Log "INFO: Valid States are '$StateOptions'"
     Quit
 }
-elseif ($LoggedInUser -like 'SC-*') {
-    Log "INFO: Generic Account $LoggedInUser logged-in to $PC"
+
+
+$DFStatus =
+Invoke-Command -ComputerName $PC -ScriptBlock {
+    (Get-ItemProperty "HKLM:\SOFTWARE\WOW6432Node\Faronics\Deep Freeze 6\" -Name "DF Status")."DF Status"
 }
-else {
-    Log "WARNING: Real User Account $LoggedInUser Logged in to $PC"
+
+if ($DFStatus -eq $DesiredState) {
+    Log "ERROR: $PC is already $DFstatus"
+    Quit
 }
 
 
-function GetRunningProcess ($process_name) {
-    Invoke-Command -ComputerName $PC -ScriptBlock {
-        try {
-            Get-Process $using:process_name -ErrorAction Stop
-        }
-        catch {
-            $false
+if ($Force -ne $true) {
+
+    $LoggedInUser = $null
+    $LoggedInUser = Get-CimInstance -Class win32_computersystem -ComputerName $PC | Select-Object username
+    $LoggedInUser = $LoggedInUser -split '\\'
+    $LoggedInUser = $LoggedInUser[1] -replace '}'
+
+
+    if ($LoggedInUser -eq '') {
+        Log "INFO: No one is logged in to $PC"
+    }
+    elseif ($null -eq $LoggedInUser) {
+        Log 'FATAL: Can not find logged-in user'
+        Quit
+    }
+    else {
+        Log "WARNING: $LoggedInUser Logged in to $PC"
+    }
+
+
+    function GetRunningProcess ($process_name) {
+        Invoke-Command -ComputerName $PC -ScriptBlock {
+            try {
+                Get-Process $using:process_name -ErrorAction Stop
+            }
+            catch {
+                $false
+            }
         }
     }
-}
 
 
-if ($ClearToProceede -ne $true) {
-    
     $Chrome = GetRunningProcess 'Chrome'
     $Firefox = GetRunningProcess 'Firefox'
     $Edge = GetRunningProcess 'Edge'
@@ -104,27 +114,26 @@ if ($ClearToProceede -ne $true) {
         $Zoom
     )
 
+
     foreach ($Process in $ProcessList) {
         if ($Process) {
             Log "FATAL: Something is Running! $PC May Be In Use! Stopping!"
+            Log 'INFO: Set Param $Force to $true to ignore this warning'
             Quit
         }
     }
 }
 
 
-$DFStatus =
-Invoke-Command -ComputerName $PC -ScriptBlock {
-    (Get-ItemProperty "HKLM:\SOFTWARE\WOW6432Node\Faronics\Deep Freeze 6\" -Name "DF Status")."DF Status"
-}
+#### Load Password ####
 
-if ($DFStatus -eq $DesiredState) {
-    Log "ERROR: $PC is already $DFstatus"
-    Quit
-}
+$loadedEncryptedPassword = Get-Content -Path $EncryptedPasswordLocation
+$loadedSecureString = ConvertTo-SecureString -String $loadedEncryptedPassword
+$DF_Password = (New-Object PSCredential "user", $loadedSecureString).GetNetworkCredential().Password
 
 
 #### Send DF Commands ####
+
 $CommandLookupTable = @{
                     'Frozen' = '/BOOTFROZEN';
                     'Thawed' = '/BOOTTHAWED';
@@ -136,14 +145,15 @@ $Command = $CommandLookupTable[$DesiredState]
 Log "INFO: Sending Command: $Command"
 Log "INFO: Console may show an error when PC Reboots. This is normal"
 
+
 Invoke-Command -ComputerName "$PC" -ScriptBlock{
-    C:\Windows\SysWOW64\.\DFC.exe "$using:DFPassword" "$using:Command"
+    C:\Windows\SysWOW64\.\DFC.exe "$using:DF_Password" "$using:Command"
 } # Command will hang while PC prepares to reboot, 
-# then will raise OpenError as connection is lost during the reboot
+  # then will raise OpenError as connection is lost during the reboot
 
 
 Log "INFO: Starting Sleep to wait for reboot"
-Start-Sleep -Seconds 60
+Start-Sleep -Seconds $RebootTimeout
 
 
 $TestAttempts = 0
@@ -173,14 +183,14 @@ Invoke-Command -ComputerName $PC -ScriptBlock {
 }
 
 if ($DFStatus -eq $DesiredState) {
-    $Success = $true
+    $ScriptResult = $true
     Log "INFO: Sucessfully rebooted $DFStatus"
 }
 else {
-    $Success = $false
+    $ScriptResult = $false
     Log "WARNING: Could not verify operation.  State is $DFStatus, Desired State is $DesiredState"
-    Log "WARNING: Check DF install package on $PC.  Failure is usually due to an outdated DF Install which has an old password"
+    Log "INFO: Password may be wrong"
     Log 'INFO: PC must be frozen first in order to boot into Thawed or Thawed and Locked states'
 }
 
-Log "DeepFreezeActionResult: $Success"
+Log "DeepFreezeActionResult: $ScriptResult"
