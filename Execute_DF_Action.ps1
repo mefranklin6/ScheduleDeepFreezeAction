@@ -16,7 +16,6 @@ Param(
 
     [Parameter()]
     [int]$RebootTimeout = 60
-
 )
 
 
@@ -47,8 +46,13 @@ if (!(Test-Connection -ComputerName $PC -Count 1)){
 }
 
 
-$StateOptions = @('Frozen', 'Thawed', 'Thawed and Locked')
-if (!($DesiredState -in $StateOptions)) {
+$CommandLookupTable = @{
+                    'Frozen' = '/BOOTFROZEN';
+                    'Thawed' = '/BOOTTHAWED';
+                    'Thawed and Locked' = '/BOOTTHAWEDNOINPUT'            
+}
+
+if (!($DesiredState -in $CommandLookupTable.Keys)) {
     Log "FATAL: $DesiredState is not a valid state"
     Log "INFO: Valid States are '$StateOptions'"
     Quit
@@ -142,12 +146,6 @@ $DF_Password = (New-Object PSCredential "user", $loadedSecureString).GetNetworkC
 
 
 #### Send DF Commands ####
-
-$CommandLookupTable = @{
-                    'Frozen' = '/BOOTFROZEN';
-                    'Thawed' = '/BOOTTHAWED';
-                    'Thawed and Locked' = '/BOOTTHAWEDNOINPUT'            
-}
 
 $Command = $CommandLookupTable[$DesiredState]
 
