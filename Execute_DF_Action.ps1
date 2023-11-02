@@ -54,11 +54,16 @@ if (!($DesiredState -in $StateOptions)) {
     Quit
 }
 
-$DFStatus = $null
-$DFStatus =
-Invoke-Command -ComputerName $PC -ScriptBlock {
-    (Get-ItemProperty "HKLM:\SOFTWARE\WOW6432Node\Faronics\Deep Freeze 6\" -Name "DF Status")."DF Status"
+
+try {
+    $DFStatus = Invoke-Command -ComputerName $PC -ScriptBlock {
+        (Get-ItemProperty "HKLM:\SOFTWARE\WOW6432Node\Faronics\Deep Freeze 6\" -Name "DF Status" -ErrorAction Stop)."DF Status"
+    }
+} 
+catch {
+    $DFStatus = $null
 }
+
 
 if ($DFStatus -eq $DesiredState) {
     Log "ERROR: $PC is already $DFstatus"
