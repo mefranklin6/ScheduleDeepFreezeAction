@@ -54,7 +54,7 @@ $CommandLookupTable = @{
 
 if (!($DesiredState -in $CommandLookupTable.Keys)) {
     Log "FATAL: $DesiredState is not a valid state"
-    Log "INFO: Valid States are '$StateOptions'"
+    Log "INFO: Valid States are $CommandLookupTable.Keys"
     Quit
 }
 
