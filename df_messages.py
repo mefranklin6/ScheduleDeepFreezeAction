@@ -54,7 +54,7 @@ Subject: Deep Freeze Action FAILURE
 PC: {inputValues.pc_name}
 FAILED to reboot {inputValues.status}
 
-Manual action may be needed.  CTS has been alerted.
+Manual action may be required.
 
 Log: 
 
