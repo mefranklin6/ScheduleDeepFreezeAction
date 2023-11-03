@@ -5,8 +5,8 @@ Param(
     [Parameter(Mandatory=$true)]
     [string]$DesiredState,
 
-    [Parameter(Mandatory = $true)]
-    [string]$EncryptedPasswordLocation,
+    [Parameter()]                              # ignore intellisense security warnings...
+    [string]$EncryptedPasswordLocation = $null # this is the encryped pw location, not the pw
 
     [Parameter()]
     [string]$LogLocation = "C:\Temp\$PC-DeepFreeze.txt",
@@ -25,8 +25,7 @@ function Log ($message) {
     Write-Output $message
     $LogStr = "$LogTime  -  $PC  -  $message"
     $LogStr | Out-File "$LogLocation" -Append
-    }
-
+}
 
 # measures success of the script
 [bool]$ScriptResult = $false
@@ -35,10 +34,17 @@ function Quit {
     $script:ScriptResult = $false
     Log "DeepFreezeActionResult: $ScriptResult"
     Exit
-}
+    }
 
 
 #### Verifications ####
+
+
+if ($PSVersionTable.PSVersion.Major -lt 7) {
+    $EncryptedPasswordLocation = $null
+    Log "FATAL: Script requires Powershell 7 or above"
+    Quit
+}
 
 if (!(Test-Connection -ComputerName $PC -Count 1)){
     Log "FATAL: $PC is not online or wrong name!"
@@ -73,76 +79,76 @@ if ($DFStatus -eq $DesiredState) {
     Log "ERROR: $PC is already $DFstatus"
     Quit
 }
-elseif ($DFStatus -eq $null) {
+elseif ($null -eq $DFStatus) {
     Log "FATAL: No Deep Freeze detected on $PC"
     Quit
 }
 
 
 if ($Force -ne $true) {
-
-    $LoggedInUser = $null
-    $LoggedInUser = Get-CimInstance -Class win32_computersystem -ComputerName $PC | Select-Object username
-    $LoggedInUser = $LoggedInUser -split '\\'
-    $LoggedInUser = $LoggedInUser[1] -replace '}'
-
-
-    if ($LoggedInUser -eq '') {
-        Log "INFO: No one is logged in to $PC"
+    
+    try {
+        $LoggedInUser = (Get-CimInstance -Class win32_computersystem -ComputerName $PC).username -split '\\' | Select-Object -Last 1
     }
-    elseif ($null -eq $LoggedInUser) {
-        Log 'FATAL: Can not find logged-in user'
+    catch {
+        $LoggedInUser = $null
+    }
+    
+    switch ($LoggedInUser) {
+        $null { Log 'FATAL: Can not find logged-in user'; Quit }
+        '' { Log "INFO: No one is logged in to $PC" }
+        default { Log "WARNING: $LoggedInUser Logged in to $PC" }
+    }
+    
+
+    $ProcessTable = @{
+                    'Chrome' = 'Chrome';
+                    'Firefox' = 'Firefox';
+                    'Edge' = 'msedge';
+                    'PowerPoint' = 'POWERPNT';
+                    'Teams' = 'Teams';
+                    'Zoom' = 'Zoom';
+    }
+    
+    $AllProcesses = Invoke-Command -ComputerName $PC -ScriptBlock {
+        Get-Process
+    }
+
+    $ProcessAlerts = @()
+    foreach ($running_process in $AllProcesses) {
+        foreach ($process_table_value in $ProcessTable.Values) {
+            if ($process_table_value -like $running_process.ProcessName) {
+                $FoundRunningProcess = $ProcessTable[$running_process.ProcessName]
+                if ($FoundRunningProcess -in $ProcessAlerts) {
+                    continue
+                }
+                else{
+                    $ProcessAlerts += $FoundRunningProcess
+                }
+            }
+        }
+    }
+
+    if ($ProcessAlerts.Count -gt 0) {
+        Log "INFO: Found running process(es): $ProcessAlerts"
+        Log 'FATAL: $Force set to $false and PC may be in use, exiting'
         Quit
-    }
-    else {
-        Log "WARNING: $LoggedInUser Logged in to $PC"
-    }
-
-
-    function GetRunningProcess ($process_name) {
-        Invoke-Command -ComputerName $PC -ScriptBlock {
-            try {
-                Get-Process $using:process_name -ErrorAction Stop
-            }
-            catch {
-                $false
-            }
-        }
-    }
-
-
-    $Chrome = GetRunningProcess 'Chrome'
-    $Firefox = GetRunningProcess 'Firefox'
-    $Edge = GetRunningProcess 'Edge'
-    $PowerPoint = GetRunningProcess 'POWERPNT'
-    $Teams = GetRunningProcess 'Teams'
-    $Zoom = GetRunningProcess 'Zoom'
-
-    $ProcessList = @(
-        $Chrome, 
-        $Firefox, 
-        $Edge, 
-        $PowerPoint, 
-        $Teams, 
-        $Zoom
-    )
-
-
-    foreach ($Process in $ProcessList) {
-        if ($Process) {
-            Log "FATAL: Something is Running! $PC May Be In Use! Stopping!"
-            Log 'INFO: Set Param $Force to $true to ignore this warning'
-            Quit
-        }
     }
 }
 
 
 #### Load Password ####
 
-$loadedEncryptedPassword = Get-Content -Path $EncryptedPasswordLocation
-$loadedSecureString = ConvertTo-SecureString -String $loadedEncryptedPassword
-$DF_Password = (New-Object PSCredential "user", $loadedSecureString).GetNetworkCredential().Password
+if (Test-Path $EncryptedPasswordLocation) {
+    $loadedEncryptedPassword = Get-Content -Path $EncryptedPasswordLocation
+    $loadedSecureString = ConvertTo-SecureString -String $loadedEncryptedPassword
+    $DF_Password = (New-Object PSCredential "user", $loadedSecureString).GetNetworkCredential().Password
+}
+else {
+    Log "FATAL: Could not find encrypted password at $EncryptedPasswordLocation"
+    Log "ERROR: Please run PasswordEncrypter.ps1 or fix the path"
+    Quit
+}
 
 
 #### Send DF Commands ####
@@ -200,4 +206,5 @@ else {
     Log 'INFO: PC must be frozen first in order to boot into Thawed or Thawed and Locked states'
 }
 
+# Don't change this formatting, it's read by main.py later on
 Log "DeepFreezeActionResult: $ScriptResult"
