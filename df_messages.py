@@ -1,7 +1,6 @@
 import inputValues
 
 # gets sent from main
-log_data = None
 config = None
 
 
@@ -67,5 +66,3 @@ Log:
     return failure_email
 ###############################################################################
 
-#if __name__ == '__main__':
-#    pass
