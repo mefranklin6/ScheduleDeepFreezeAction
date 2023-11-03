@@ -1,5 +1,5 @@
 Emails:
-  Email_CC : 'carboncopy@example.com'
+  Email_CC : 'mefranklin@example.com'
   Email_From : 'automation@example.com'
   From_Name : 'Beep Boop Bot'
   support_email : 'helpdesk@example.com'
