@@ -1,0 +1,13 @@
+Emails:
+  Email_CC : 'someone@example.com'
+  Email_From : 'automation@example.com'
+  From_Name : 'Deep Freeze Bot'
+  support_email : 'helpdesk@example.com'
+  support_name : 'Your Help Desk'
+  SMTP_Server : 'smtp.example.com'
+  SMTP_User : 'user@example.com'
+  SMTP_Password : 'yoursecretpass' 
+
+Utils:
+  Log_Directory = 'C:\Temp'
+  
