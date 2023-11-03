@@ -33,6 +33,7 @@ if (Test-Path $DeepFreezePasswordStore) {
 
 
 <# 
+
 Decrypt example:
 Requires Powershell 7+
 

@@ -2,10 +2,10 @@
 
 pc_name = ''
 requestor_email = ''
-# date = ''
+date = '' #TODO: implement date
 time = ''
 status = ''
 
 
 if __name__ == '__main__':
-    print('you are running the wrong file')
+    pass

@@ -49,8 +49,6 @@ status = ttk.Combobox(root, values=["Frozen", "Thawed", "Thawed and Locked"])
 status.grid(row=6, column=1)
 
 
-values = {}
-
 def submit():
     pc_name_value = pc_name.get()
     email_value = email.get()
@@ -99,8 +97,14 @@ def SendEmail(
 #### Confirmation ####
 def CheckResult():
     try:
-        with open(f'C:/Temp/{values["PC Name"]}-DeepFreeze.txt', 'r', encoding='UTF-16') as f:
+        with open(
+                f'{config["Utils"]["Log_Directory"]}{inputValues.pc_name}.txt',
+                'r',
+                encoding='UTF-16'
+        ) as f:
+            
             log_data = f.read().strip()
+            
             # send to messages module to be included in email, if action failed
             messages.log_data = log_data
         

@@ -6,10 +6,10 @@ Param(
     [string]$DesiredState,
 
     [Parameter()]                              # ignore intellisense security warnings...
-    [string]$EncryptedPasswordLocation = $null # this is the encryped pw location, not the pw
+    [string]$EncryptedPasswordLocation = $null, # this is the encryped pw location, not the pw
 
     [Parameter()]
-    [string]$LogLocation = "C:\Temp\$PC-DeepFreeze.txt",
+    [string]$LogLocation = "C:\Temp\",
 
     [Parameter()]
     [bool]$Force = $false,
@@ -18,6 +18,11 @@ Param(
     [int]$RebootTimeout = 60
 )
 
+$LogLocation = "$LogLocation_$PC.txt"
+
+if (Test-Path $LogLocation) {
+    Remove-Item $LogLocation
+}
 
 function Log ($message) {
     $LogTime = Get-Date -DisplayHint Time
