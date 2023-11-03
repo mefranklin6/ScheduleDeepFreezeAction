@@ -1,7 +1,7 @@
 Emails:
-  Email_CC : 'mefranklin@example.com'
+  Email_CC : 'someone@example.com'
   Email_From : 'automation@example.com'
-  From_Name : 'Beep Boop Bot'
+  From_Name : 'Deep Freeze Bot'
   support_email : 'helpdesk@example.com'
   support_name : 'Your Help Desk'
   SMTP_Server : 'smtp.example.com'
