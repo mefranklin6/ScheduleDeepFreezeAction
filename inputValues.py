@@ -2,8 +2,9 @@
 
 pc_name = ''
 requestor_email = ''
-date = '' #TODO: implement date
+date = '' # not used yet
 time = ''
+force = False
 status = ''
 
 

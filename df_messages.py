@@ -1,16 +1,18 @@
 import inputValues
-from main import config
 
 # gets sent from main
 log_data = None
+config = None
 
 
 ###############################################################################
-footer = f'''This is an automated email from {config["Emails"]["Support_Name"]}
+def make_footer():
+    footer = f'''This is an automated email from {config["Emails"]["Support_Name"]}
 Please contact {config["Emails"]["Support_Email"]} for any changes or issues'''
-
+    return footer
 ###############################################################################
-scheduled_email = f"""From: {config['Emails']['From_Name']}
+def make_schedule_email(footer):
+    scheduled_email = f"""From: {config['Emails']['From_Name']}
 To: {inputValues.requestor_email}
 Subject: Deep Freeze Action Scheduled
 
@@ -26,9 +28,11 @@ To prevent disruption, automatic action will not be taken if there are signs of 
 
 {footer}
 """
+    return scheduled_email
 
 ###############################################################################
-success_email = f"""From: {config['Emails']['From_Name']}
+def make_success_email(footer):
+    success_email = f"""From: {config['Emails']['From_Name']}
 To: {inputValues.requestor_email}
 Subject: Deep Freeze Action Sucessful
 
@@ -39,9 +43,10 @@ Has Sucessfully Rebooted {inputValues.status}
 
 {footer}
 """
+    return success_email
 ###############################################################################
-
-failure_email = f"""From: {config['Emails']['From_Name']}
+def make_failure_email(footer, log_data):
+    failure_email = f"""From: {config['Emails']['From_Name']}
 To: {inputValues.requestor_email}
 Subject: Deep Freeze Action FAILURE
 
@@ -59,7 +64,8 @@ Log:
 
 {footer}
 """
+    return failure_email
 ###############################################################################
 
-if __name__ == '__main__':
-    pass
+#if __name__ == '__main__':
+#    pass

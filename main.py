@@ -3,12 +3,16 @@ from tkinter import ttk
 #from tkcalendar import DateEntry
 from subprocess import run
 import schedule, yaml, smtplib
-import inputValues, messages
+import inputValues, df_messages
 from time import sleep
-
 
 with open('Config.yaml', 'r') as file:
     config = yaml.safe_load(file)
+
+
+df_messages.config = config
+footer = df_messages.make_footer()
+
 
 # replace with full path if having issues
 pwsh_script_path = 'Execute_DF_Action.ps1'
@@ -42,6 +46,10 @@ tk.Label(root, text="Minute").grid(row=4)
 minute = tk.Spinbox(root, from_=0, to=59, format="%02.0f")
 minute.grid(row=4, column=1)
 
+# Force checkbox
+force = tk.BooleanVar()  # This variable will hold the state of the checkbox
+force.set(False)  # default state
+tk.Checkbutton(root, text="Force", variable=force).grid(row=5, column=1)
 
 # Status selector
 tk.Label(root, text="Status").grid(row=6)
@@ -54,12 +62,14 @@ def submit():
     email_value = email.get()
 #   date_value = date.get_date()
     time_value = f'{hour.get()}:{minute.get()}'
+    force_value = force.get()
     status_value = status.get()
 
     print("PC Name: ", pc_name_value)
     print("Email: ", email_value)
 #   print("Date: ", date_value)
     print("Time: ", time_value)
+    print("Force:" , force_value)
     print("Desired State: ", status_value)
     root.destroy()
 
@@ -67,6 +77,7 @@ def submit():
     inputValues.requestor_email = email_value
 #   inputValues.date = date_value
     inputValues.time = time_value
+    inputValues.force = force_value
     inputValues.status = status_value
 
 
@@ -78,7 +89,7 @@ root.mainloop()
 
 #### Email Stuff ####
 
-EMAIL_TO = [f'{inputValues.requestor_email}', f'{config["Email_CC"]}']
+EMAIL_TO = [f'{inputValues.requestor_email}', f'{config["Emails"]["Email_CC"]}']
 
 def SendEmail(
         email_to, 
@@ -105,14 +116,12 @@ def CheckResult():
             
             log_data = f.read().strip()
             
-            # send to messages module to be included in email, if action failed
-            messages.log_data = log_data
         
         if 'DeepFreezeActionResult: True' in log_data:
-            Result_email_body = messages.success_email
+            Result_email_body = df_messages.make_success_email(footer)
 
         elif 'DeepFreezeActionResult: False' in log_data:
-            Result_email_body = messages.failure_email
+            Result_email_body = df_messages.make_failure_email(footer, log_data)
 
         else:
             print('UNCAUGHT EXCEPTION')
@@ -136,9 +145,12 @@ def main():
          pwsh_script_path, 
          inputValues.pc_name, 
          inputValues.status,
+         config['Utils']['Log_Directory'],
+         inputValues.force,
+         None
          ]
     ) 
-    ''' FIXME
+    '''
         PC
         DesiredState
         EncryptedPassLoc
@@ -156,12 +168,12 @@ def main():
 SendEmail(
     EMAIL_TO,
     config['Emails']['Email_From'],
-    messages.scheduled_email
+    df_messages.scheduled_email
     )
 
 
 #### Schedule Stuff ####
-schedule.every().day.at(values['Time']).do(main)
+schedule.every().day.at(inputValues.time).do(main)
 
 while True:
     schedule.run_pending()
