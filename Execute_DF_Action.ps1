@@ -89,6 +89,7 @@ elseif ($null -eq $DFStatus) {
     Quit
 }
 
+$CheckProcesses = $true
 
 if ($Force -ne $true) {
     
@@ -101,20 +102,13 @@ if ($Force -ne $true) {
     
     switch ($LoggedInUser) {
         $null { Log 'FATAL: Can not find logged-in user'; Quit }
-        '' { Log "INFO: No one is logged in to $PC" }
+        '' { Log "INFO: No one is logged in to $PC" ; $CheckProcesses = $false }
         default { Log "WARNING: $LoggedInUser Logged in to $PC" }
     }
+}
     
+if ($Force -ne $true && $CheckProcesses -ne $false) {
 
-    $ProcessTable = @{
-                    'Chrome' = 'Chrome';
-                    'Firefox' = 'Firefox';
-                    'Edge' = 'msedge';
-                    'PowerPoint' = 'POWERPNT';
-                    'Teams' = 'Teams';
-                    'Zoom' = 'Zoom';
-    }
-    
     $AllProcesses = Invoke-Command -ComputerName $PC -ScriptBlock {
         Get-Process
     }
