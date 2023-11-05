@@ -5,14 +5,14 @@ Param(
     [Parameter(Mandatory=$true)]
     [string]$DesiredState,
 
-    [Parameter()]                              # ignore intellisense security warnings...
-    [string]$EncryptedPasswordLocation = $null, # this is the encryped pw location, not the pw
+    [Parameter(Mandatory=$true)]        # ignore intellisense security warnings...
+    [string]$EncryptedPasswordLocation, # this is the encryped pw location, not the pw
 
-    [Parameter()]
-    [string]$LogLocation = "C:\Temp\",
+    [Parameter(Mandatory=$true)]
+    [string]$LogLocation,
 
-    [Parameter()]
-    [bool]$Force = $false,
+    [Parameter(Mandatory=$true)]
+    [bool]$Force,
 
     [Parameter()]
     [int]$RebootTimeout = 60
