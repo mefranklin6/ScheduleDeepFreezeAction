@@ -106,6 +106,7 @@ def SendEmail(
 
 
 #### Confirmation ####
+#TODO: add return values based on success, add to exit code
 def CheckResult():
     try:
         with open(
@@ -133,7 +134,7 @@ def CheckResult():
                 Result_email_body
                 )
 
-        
+    #TODO: make msg for result unknown   
     except FileNotFoundError:
         print('File does not exist.')
 
@@ -165,6 +166,7 @@ def main():
 
 
 # Send 'action scheduled' email
+#TODO: SMTP.Login
 SendEmail(
     EMAIL_TO,
     config['Emails']['Email_From'],
