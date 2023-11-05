@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import tkinter as tk
 from tkinter import ttk
 #from tkcalendar import DateEntry
@@ -11,7 +13,6 @@ with open('Config.yaml', 'r') as file:
 
 
 df_messages.config = config
-footer = df_messages.make_footer()
 
 
 # replace with full path if having issues
@@ -89,7 +90,10 @@ root.mainloop()
 
 #### Email Stuff ####
 
+FOOTER = df_messages.make_footer()
 EMAIL_TO = [f'{inputValues.requestor_email}', f'{config["Emails"]["Email_CC"]}']
+SMTP_PASSWORD = config['Emails']['SMTP_Password']
+
 
 def SendEmail(
         email_to, 
@@ -99,6 +103,10 @@ def SendEmail(
     
     try:    
         smtpObj = smtplib.SMTP(config['SMTP_Server'])    
+        
+        if SMTP_PASSWORD is not None and SMTP_PASSWORD != '':
+            smtpObj.login(config['Emails']['SMTP_User'], SMTP_PASSWORD)
+        
         smtpObj.sendmail(email_from, email_to, email_msg)    
         print("INFO: Successfully sent email")    
     except Exception:    
@@ -106,8 +114,8 @@ def SendEmail(
 
 
 #### Confirmation ####
-#TODO: add return values based on success, add to exit code
-def CheckResult():
+
+def CheckResult() -> tuple('result_email-body', 'return_code[0,1]'):
     try:
         with open(
                 f'{config["Utils"]["Log_Directory"]}{inputValues.pc_name}.txt',
@@ -119,27 +127,25 @@ def CheckResult():
             
         
         if 'DeepFreezeActionResult: True' in log_data:
-            Result_email_body = df_messages.make_success_email(footer)
+            Result_email_body = df_messages.make_success_email(FOOTER)
+            return (Result_email_body, 0)
 
         elif 'DeepFreezeActionResult: False' in log_data:
-            Result_email_body = df_messages.make_failure_email(footer, log_data)
+            Result_email_body = df_messages.make_failure_email(FOOTER, log_data)
+            return (Result_email_body, 1)
 
         else:
             print('UNCAUGHT EXCEPTION')
-
-        # Results email
-        SendEmail(
-                EMAIL_TO,
-                config['Emails']['Email_From'], 
-                Result_email_body
-                )
+            return (None, 1)
 
     #TODO: make msg for result unknown   
     except FileNotFoundError:
         print('File does not exist.')
+        return (None, 1)
 
 
 #### Actions ####
+
 def main():
     run([
         'powershell.exe',
@@ -161,16 +167,28 @@ def main():
     '''
     
     sleep(1)
-    CheckResult()
-    return exit()
+    
+    result_email_body, return_code = CheckResult()
+
+    SendEmail(
+            EMAIL_TO,
+            config['Emails']['Email_From'],
+            result_email_body
+    )
+    
+    return exit(return_code)
+
 
 
 # Send 'action scheduled' email
-#TODO: SMTP.Login
+
+force_description = df_messages.make_force_description(inputValues.force)
+scheduled_email = df_messages.make_schedule_email(force_description, FOOTER)
+
 SendEmail(
     EMAIL_TO,
     config['Emails']['Email_From'],
-    df_messages.scheduled_email
+    scheduled_email
     )
 
 
