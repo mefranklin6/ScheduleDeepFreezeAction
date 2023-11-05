@@ -151,12 +151,12 @@ def main():
          ]
     ) 
     '''
-        PC
-        DesiredState
-        EncryptedPassLoc
-        LogLoc - optional
-        Force - optional
-        RebootTimeout - optional    
+        str:PC
+        str:DesiredState
+        str:EncryptedPasswordLocation
+        str:LogLocation
+        bool:Force
+        int:RebootTimeout - optional    
     '''
     
     sleep(1)
