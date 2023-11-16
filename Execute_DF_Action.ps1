@@ -12,13 +12,12 @@ Param(
     [string]$LogLocation,
 
     [Parameter(Mandatory=$true)]
-    [bool]$Force,
-
-    [Parameter()]
-    [int]$RebootTimeout = 60
+    [string]$Force
 )
 
-$LogLocation = "$LogLocation_$PC.txt"
+$LogLocation = "$LogLocation"+"/$PC.txt"
+Write-Output "Log Location: $LogLocation"
+Write-Output $EncryptedPasswordLocation
 
 if (Test-Path $LogLocation) {
     Remove-Item $LogLocation
@@ -42,11 +41,21 @@ function Quit {
     }
 
 
+# Python can only send strings to Powershell
+if ($Force -like 'True') {
+    $Force = $true
+}
+else{
+    $Force = $false
+}
+
+
 #### Verifications ####
 
 
 if ($PSVersionTable.PSVersion.Major -lt 7) {
     $EncryptedPasswordLocation = $null
+    Write-Output $PSVersionTable.PSVersion.Major
     Log "FATAL: Script requires Powershell 7 or above"
     Quit
 }
@@ -107,7 +116,7 @@ if ($Force -ne $true) {
     }
 }
     
-if ($Force -ne $true && $CheckProcesses -ne $false) {
+if ($Force -ne $true -and $CheckProcesses -ne $false) {
 
     $AllProcesses = Invoke-Command -ComputerName $PC -ScriptBlock {
         Get-Process
@@ -148,7 +157,7 @@ else {
     Log "ERROR: Please run PasswordEncrypter.ps1 or fix the path"
     Quit
 }
-
+Write-Output "-----------$DF_Password"
 
 #### Send DF Commands ####
 
@@ -165,7 +174,7 @@ Invoke-Command -ComputerName "$PC" -ScriptBlock{
 
 
 Log "INFO: Starting Sleep to wait for reboot"
-Start-Sleep -Seconds $RebootTimeout
+Start-Sleep -Seconds 60
 
 
 $TestAttempts = 0

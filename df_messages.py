@@ -1,25 +1,20 @@
-import inputValues
-
-# gets sent from main
-config = None
-
 
 ###############################################################################
 
-def make_footer():
-    footer = f'''This is an automated email from {config["Emails"]["Support_Name"]}
-Please contact {config["Emails"]["Support_Email"]} for any changes or issues'''
+def make_footer(support_name, support_email):
+    footer = f'''This is an automated email from {support_name}
+Please contact {support_email} for any changes or issues'''
     return footer
 
 ###############################################################################
 
 def make_force_description(force:bool):
-    if force == True:
+    if force == False:
         force_description = '''Please make sure all programs on the PC are closed, including Zoom, PowerPoint, etc.
 To prevent disruption, automatic action will not be taken if there are signs of user activity.
 To skip checking, please re-schedule and set the 'Force' flag.'''
     
-    if force == False:
+    if force == True:
         force_description = '''Warning: Force flag is set.
 Reboot commands will be sent REGARDLESS of user activity on the machine'''
     

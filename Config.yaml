@@ -1,13 +1,14 @@
 Emails:
-  Email_CC : 'someone@example.com'
-  Email_From : 'automation@example.com'
-  From_Name : 'Deep Freeze Bot'
-  support_email : 'helpdesk@example.com'
-  support_name : 'Your Help Desk'
-  SMTP_Server : 'smtp.example.com'
-  SMTP_User : 'user@example.com'
-  SMTP_Password : 'yoursecretpass' 
+  Email_CC : 'mefranklin@csuchico.edu.edu'
+  Email_From : 'automation@csuchico.edu'
+  From_Name : 'CTS Deep Freeze Bot'
+  Support_Email : 'helpdesk@example.com'
+  Support_Name : 'Your Help Desk'
+  SMTP_Server : 'smtp.csuchico.edu'
+  SMTP_User : ''
+  SMTP_Password : '' 
 
 Utils:
-  Log_Directory = 'C:\Temp'
+  Log_Directory : 'C:\Temp'
+  Encryped_PW_Location : '.\DeepFreezePassword.txt'
   

@@ -12,11 +12,12 @@ with open('Config.yaml', 'r') as file:
     config = yaml.safe_load(file)
 
 
+# send config to module
 df_messages.config = config
 
 
 # replace with full path if having issues
-pwsh_script_path = 'Execute_DF_Action.ps1'
+pwsh_script_path = './Execute_DF_Action.ps1'
 
 
 ##### GUI STUFF #####
@@ -82,6 +83,7 @@ def submit():
     inputValues.status = status_value
 
 
+
 # Submit button
 tk.Button(root, text="Submit", command=submit).grid(row=7)
 
@@ -100,17 +102,17 @@ def SendEmail(
         email_from, 
         email_msg
     ):
-    
+
     try:    
-        smtpObj = smtplib.SMTP(config['SMTP_Server'])    
+        smtpObj = smtplib.SMTP(config['Emails']['SMTP_Server'])    
         
         if SMTP_PASSWORD is not None and SMTP_PASSWORD != '':
             smtpObj.login(config['Emails']['SMTP_User'], SMTP_PASSWORD)
         
         smtpObj.sendmail(email_from, email_to, email_msg)    
-        print("INFO: Successfully sent email")    
-    except Exception:    
-        print("ERROR: unable to send email")
+        print('INFO: Successfully sent email')    
+    except Exception as e:    
+        print(f'ERROR: unable to send email, {e}')
 
 
 #### Confirmation ####
@@ -147,14 +149,15 @@ def CheckResult() -> tuple('result_email-body', 'return_code[0,1]'):
 #### Actions ####
 
 def main():
+    print(str(inputValues.force))
     run([
-        'powershell.exe',
+        'pwsh.exe', # to launch Powershell 7
          pwsh_script_path, 
          inputValues.pc_name, 
          inputValues.status,
+         config['Utils']['Encryped_PW_Location'],
          config['Utils']['Log_Directory'],
-         inputValues.force,
-         None
+         str(inputValues.force),
          ]
     ) 
     '''
@@ -162,8 +165,7 @@ def main():
         str:DesiredState
         str:EncryptedPasswordLocation
         str:LogLocation
-        bool:Force
-        int:RebootTimeout - optional    
+        str:Force 
     '''
     
     sleep(1)
@@ -183,6 +185,8 @@ def main():
 # Send 'action scheduled' email
 
 force_description = df_messages.make_force_description(inputValues.force)
+print(f'force value {inputValues.force}')
+print(force_description)
 scheduled_email = df_messages.make_schedule_email(force_description, FOOTER)
 
 SendEmail(
