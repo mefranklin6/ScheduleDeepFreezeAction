@@ -12,11 +12,11 @@ saving a plain-text password in a script
 #>
 
 # Location that the encryped file gets saved to
-$DeepFreezePasswordStore = 'DeepFreezePassword.txt'
+$DeepFreezePasswordStore = 'C:\Temp\DeepFreezePassword.txt'
 
 Remove-Item $DeepFreezePasswordStore
 
-$DeepFreezePassword = Read-Host "Enter Deep Freeze Password: " -AsSecureString
+$DeepFreezePassword = Read-Host "Enter Deep Freeze Password: " #-AsSecureString
 
 function EncryptPassword ($pw, $file_path) {
     $secureString = ConvertTo-SecureString -String $pw -AsPlainText -Force
