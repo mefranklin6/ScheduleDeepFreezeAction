@@ -1,8 +1,0 @@
-11/15/2023 3:43:02 PM  -  SC-SPARE4  -  WARNING: SC-BUTE101 Logged in to SC-SPARE4
-11/15/2023 3:43:05 PM  -  SC-SPARE4  -  INFO: Sending Command: /BOOTFROZEN
-11/15/2023 3:43:05 PM  -  SC-SPARE4  -  INFO: Console may show an error when PC Reboots. This is normal
-11/15/2023 3:43:16 PM  -  SC-SPARE4  -  INFO: Starting Sleep to wait for reboot
-11/15/2023 3:44:17 PM  -  SC-SPARE4  -  WARNING: Could not verify operation.  State is Thawed, Desired State is Frozen
-11/15/2023 3:44:17 PM  -  SC-SPARE4  -  INFO: Password may be wrong
-11/15/2023 3:44:17 PM  -  SC-SPARE4  -  INFO: PC must be frozen first in order to boot into Thawed or Thawed and Locked states
-11/15/2023 3:44:17 PM  -  SC-SPARE4  -  DeepFreezeActionResult: False

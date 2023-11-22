@@ -1,4 +1,5 @@
 <# 
+
 Run this to set (new) passwords.
 Passwords will be encrypted on disk
 Passwords can only be decrypted by:
@@ -7,7 +8,8 @@ Passwords can only be decrypted by:
 
 This is not 100% secure but much better than
 saving a plain-text password in a script
-(there are times the password is plain-text in RAM)
+(there are times the password is plain-text in RAM,
+and this encrypted password can be decrypted back to plain-text)
 
 #>
 
@@ -16,7 +18,8 @@ $DeepFreezePasswordStore = 'C:\Temp\DeepFreezePassword.txt'
 
 Remove-Item $DeepFreezePasswordStore
 
-$DeepFreezePassword = Read-Host "Enter Deep Freeze Password: " #-AsSecureString
+$DeepFreezePassword = Read-Host "Enter Deep Freeze Password: "
+# -AsSecureString can not be used because the Deep Freeze CLI does not support it.
 
 function EncryptPassword ($pw, $file_path) {
     $secureString = ConvertTo-SecureString -String $pw -AsPlainText -Force

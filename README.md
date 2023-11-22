@@ -13,3 +13,11 @@ Requirements:
 
     Python 
     (written with 3.11)
+
+Security Considerations:
+    Because of a limitation in the Deep Freeze CLI, there are brief times that the Deep Freeze password
+    is loaded into RAM as a plain-text string.  That also means that the encrypted password stored on disk
+    can be decrypted into plain-text, but only by the user that encrypted the password, and
+    only on the machine that the password was origionally encrypted.  
+    The password is sent over the wire encrypted, as all things are with WinRM, but is also briefly in RAM as plain-text on the target.
+    Therefore please note that the potential for a password to be read by an unauthorized party is very small but not zero.

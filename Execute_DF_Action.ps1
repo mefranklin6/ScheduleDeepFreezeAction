@@ -17,7 +17,7 @@ Param(
 
 $LogLocation = "$LogLocation"+"/$PC.txt"
 Write-Output "Log Location: $LogLocation"
-Write-Output $EncryptedPasswordLocation
+
 
 if (Test-Path $LogLocation) {
     Remove-Item $LogLocation
@@ -55,7 +55,6 @@ else{
 
 if ($PSVersionTable.PSVersion.Major -lt 7) {
     $EncryptedPasswordLocation = $null
-    Write-Output $PSVersionTable.PSVersion.Major
     Log "FATAL: Script requires Powershell 7 or above"
     Quit
 }
@@ -157,7 +156,6 @@ else {
     Log "ERROR: Please run PasswordEncrypter.ps1 or fix the path"
     Quit
 }
-Write-Output "-----------$DF_Password"
 
 #### Send DF Commands ####
 
@@ -172,6 +170,7 @@ Invoke-Command -ComputerName "$PC" -ScriptBlock{
 } # Command will hang while PC prepares to reboot, 
   # then will raise OpenError as connection is lost during the reboot
 
+Remove-Variable -Name DF_Password
 
 Log "INFO: Starting Sleep to wait for reboot"
 Start-Sleep -Seconds 60
