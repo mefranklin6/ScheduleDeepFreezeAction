@@ -5,7 +5,7 @@ requestor_email = ''
 date = '' # not used yet
 time = ''
 force = False
-status = ''
+state = ''
 
 
 if __name__ == '__main__':
