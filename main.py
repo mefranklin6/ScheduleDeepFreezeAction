@@ -65,14 +65,14 @@ def submit():
 #   date_value = date.get_date()
     time_value = f'{hour.get()}:{minute.get()}'
     force_value = force.get()
-    status_value = status.get()
+    state = status.get()
 
     print("PC Name: ", pc_name_value)
     print("Email: ", email_value)
 #   print("Date: ", date_value)
     print("Time: ", time_value)
     print("Force:" , force_value)
-    print("Desired State: ", status_value)
+    print("Desired State: ", state)
     root.destroy()
 
     inputValues.pc_name = pc_name_value
@@ -80,7 +80,7 @@ def submit():
 #   inputValues.date = date_value
     inputValues.time = time_value
     inputValues.force = force_value
-    inputValues.status = status_value
+    inputValues.state = state
 
 
 
@@ -92,8 +92,13 @@ root.mainloop()
 
 #### Email Stuff ####
 
-FOOTER = df_messages.make_footer()
+FOOTER = df_messages.make_footer(
+    config['Emails']['Support_Name'],
+    config['Emails']['Support_Email']
+)
+
 EMAIL_TO = [f'{inputValues.requestor_email}', f'{config["Emails"]["Email_CC"]}']
+
 SMTP_PASSWORD = config['Emails']['SMTP_Password']
 
 
@@ -120,20 +125,33 @@ def SendEmail(
 def CheckResult() -> tuple('result_email-body', 'return_code[0,1]'):
     try:
         with open(
-                f'{config["Utils"]["Log_Directory"]}{inputValues.pc_name}.txt',
+                f'{config["Utils"]["Log_Directory"]}/{inputValues.pc_name}.txt',
                 'r',
-                encoding='UTF-16'
+                encoding='UTF-8'
         ) as f:
             
             log_data = f.read().strip()
             
         
         if 'DeepFreezeActionResult: True' in log_data:
-            Result_email_body = df_messages.make_success_email(FOOTER)
+            Result_email_body = df_messages.make_success_email(
+                config['Emails']['From_Name'],
+                inputValues.requestor_email,
+                inputValues.pc_name,
+                inputValues.state,
+                FOOTER
+            )
             return (Result_email_body, 0)
 
         elif 'DeepFreezeActionResult: False' in log_data:
-            Result_email_body = df_messages.make_failure_email(FOOTER, log_data)
+            Result_email_body = df_messages.make_failure_email(
+                config['Emails']['From_Name'],
+                inputValues.requestor_email,
+                inputValues.pc_name,
+                inputValues.state,
+                FOOTER,
+                log_data
+            )
             return (Result_email_body, 1)
 
         else:
@@ -154,7 +172,7 @@ def main():
         'pwsh.exe', # to launch Powershell 7
          pwsh_script_path, 
          inputValues.pc_name, 
-         inputValues.status,
+         inputValues.state,
          config['Utils']['Encryped_PW_Location'],
          config['Utils']['Log_Directory'],
          str(inputValues.force),
@@ -184,10 +202,17 @@ def main():
 
 # Send 'action scheduled' email
 
-force_description = df_messages.make_force_description(inputValues.force)
-print(f'force value {inputValues.force}')
-print(force_description)
-scheduled_email = df_messages.make_schedule_email(force_description, FOOTER)
+FORCE_DESCRIPTION = df_messages.make_force_description(inputValues.force)
+
+scheduled_email = df_messages.make_schedule_email(
+    FORCE_DESCRIPTION,
+    FOOTER,
+    config['Emails']['From_Name'],
+    inputValues.requestor_email,
+    inputValues.pc_name,
+    inputValues.state,
+    inputValues.time
+)
 
 SendEmail(
     EMAIL_TO,
