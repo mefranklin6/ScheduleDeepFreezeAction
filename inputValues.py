@@ -1,4 +1,4 @@
-# GUI Values
+# Values from GUI
 
 pc_name = ''
 requestor_email = ''

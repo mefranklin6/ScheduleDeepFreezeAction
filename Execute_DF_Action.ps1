@@ -1,53 +1,46 @@
 Param(
-    [Parameter(Mandatory=$true)]
+    [Parameter(Mandatory = $true)]
     [string]$PC,
 
-    [Parameter(Mandatory=$true)]
+    [Parameter(Mandatory = $true)]
     [string]$DesiredState,
 
-    [Parameter(Mandatory=$true)]        # ignore intellisense security warnings...
+    [Parameter(Mandatory = $true)]        # ignore intellisense security warnings...
     [string]$EncryptedPasswordLocation, # this is the encryped pw location, not the pw
 
-    [Parameter(Mandatory=$true)]
+    [Parameter(Mandatory = $true)]
     [string]$LogLocation,
 
-    [Parameter(Mandatory=$true)]
+    [Parameter(Mandatory = $true)]
     [string]$Force
 )
 
-$LogLocation = "$LogLocation"+"/$PC.txt"
+$LogLocation = "$LogLocation" + "/$PC.txt"
 Write-Output "Log Location: $LogLocation"
 
-
-if (Test-Path $LogLocation) {
-    Remove-Item $LogLocation
-}
 
 function Log ($message) {
     $LogTime = Get-Date -DisplayHint Time
     $LogTime = $LogTime.ToString()
     Write-Output $message
     $LogStr = "$LogTime  -  $PC  -  $message"
-    $LogStr | Out-File "$LogLocation" -Append
+    $LogStr | Out-File "$script:LogLocation" -Append
 }
-
-# measures success of the script
-[bool]$ScriptResult = $false
-
-function Quit {
-    $script:ScriptResult = $false
-    Log "DeepFreezeActionResult: $ScriptResult"
-    Exit
-    }
 
 
 # Python can only send strings to Powershell
 if ($Force -like 'True') {
     $Force = $true
 }
-else{
+else {
     $Force = $false
 }
+
+Log '--------------------------------------------------------------------------'
+Log "INFO: $PC"
+Log "INFO: Desired State: $DesiredState"
+Log "DEBUG: Encrypted Password Location $EncryptedPasswordLocation"
+Log "INFO: Force Flag: $Force"
 
 
 #### Verifications ####
@@ -56,25 +49,25 @@ else{
 if ($PSVersionTable.PSVersion.Major -lt 7) {
     $EncryptedPasswordLocation = $null
     Log "FATAL: Script requires Powershell 7 or above"
-    Quit
+    Exit 1
 }
 
-if (!(Test-Connection -ComputerName $PC -Count 1)){
+if (!(Test-Connection -ComputerName $PC -Count 1)) {
     Log "FATAL: $PC is not online or wrong name!"
-    Quit
+    Exit 1
 }
 
 
 $CommandLookupTable = @{
-                    'Frozen' = '/BOOTFROZEN';
-                    'Thawed' = '/BOOTTHAWED';
-                    'Thawed and Locked' = '/BOOTTHAWEDNOINPUT'            
+    'Frozen'            = '/BOOTFROZEN';
+    'Thawed'            = '/BOOTTHAWED';
+    'Thawed and Locked' = '/BOOTTHAWEDNOINPUT'            
 }
 
 if (!($DesiredState -in $CommandLookupTable.Keys)) {
     Log "FATAL: $DesiredState is not a valid state"
     Log "INFO: Valid States are $CommandLookupTable.Keys"
-    Quit
+    Exit 1
 }
 
 
@@ -90,11 +83,11 @@ catch {
 
 if ($DFStatus -eq $DesiredState) {
     Log "ERROR: $PC is already $DFstatus"
-    Quit
+    Exit 1
 }
 elseif ($null -eq $DFStatus) {
     Log "FATAL: No Deep Freeze detected on $PC"
-    Quit
+    Exit 1
 }
 
 $CheckProcesses = $true
@@ -109,29 +102,37 @@ if ($Force -ne $true) {
     }
     
     switch ($LoggedInUser) {
-        $null { Log 'FATAL: Can not find logged-in user'; Quit }
+        $null { Log 'FATAL: Can not find logged-in user'; Exit 1 }
         '' { Log "INFO: No one is logged in to $PC" ; $CheckProcesses = $false }
         default { Log "WARNING: $LoggedInUser Logged in to $PC" }
     }
 }
     
 if ($Force -ne $true -and $CheckProcesses -ne $false) {
-
     $AllProcesses = Invoke-Command -ComputerName $PC -ScriptBlock {
         Get-Process
     }
 
+    # Process Name = Common Name
+    # Don't add Edge, it's almost always running
+    $ProcessTable = @{
+        'Chrome'   = 'Chrome';
+        'Firefox'  = 'Firefox';
+        'POWERPNT' = 'PowerPoint';
+        'Teams'    = 'Teams';
+        'Zoom'     = 'Zoom'
+    }
+
     $ProcessAlerts = @()
+
     foreach ($running_process in $AllProcesses) {
-        foreach ($process_table_value in $ProcessTable.Values) {
-            if ($process_table_value -like $running_process.ProcessName) {
-                $FoundRunningProcess = $ProcessTable[$running_process.ProcessName]
-                if ($FoundRunningProcess -in $ProcessAlerts) {
-                    continue
-                }
-                else{
-                    $ProcessAlerts += $FoundRunningProcess
-                }
+        if ($ProcessTable.ContainsKey($running_process.ProcessName)) {
+            $FoundProcess = $ProcessTable[$running_process.ProcessName]
+            if ($FoundProcess -in $ProcessAlerts) {
+                continue
+            }
+            else {
+                $ProcessAlerts += $FoundProcess
             }
         }
     }
@@ -139,12 +140,12 @@ if ($Force -ne $true -and $CheckProcesses -ne $false) {
     if ($ProcessAlerts.Count -gt 0) {
         Log "INFO: Found running process(es): $ProcessAlerts"
         Log 'FATAL: $Force set to $false and PC may be in use, exiting'
-        Quit
+        Exit 1
     }
 }
 
 
-#### Load Password ####
+#### Load DF Password ####
 
 if (Test-Path $EncryptedPasswordLocation) {
     $loadedEncryptedPassword = Get-Content -Path $EncryptedPasswordLocation
@@ -154,45 +155,74 @@ if (Test-Path $EncryptedPasswordLocation) {
 else {
     Log "FATAL: Could not find encrypted password at $EncryptedPasswordLocation"
     Log "ERROR: Please run PasswordEncrypter.ps1 or fix the path"
-    Quit
+    Exit 1
 }
 
 #### Send DF Commands ####
 
 $Command = $CommandLookupTable[$DesiredState]
 
-Log "INFO: Sending Command: $Command"
+Log "DEBUG: Sending Command: $Command"
 Log "INFO: Console may show an error when PC Reboots. This is normal"
 
 
-Invoke-Command -ComputerName "$PC" -ScriptBlock{
+Invoke-Command -ComputerName "$PC" -ScriptBlock {
     C:\Windows\SysWOW64\.\DFC.exe "$using:DF_Password" "$using:Command"
 } # Command will hang while PC prepares to reboot, 
-  # then will raise OpenError as connection is lost during the reboot
+# then will raise OpenError as connection is lost during the reboot
 
 Remove-Variable -Name DF_Password
 
-Log "INFO: Starting Sleep to wait for reboot"
-Start-Sleep -Seconds 60
 
-
-$TestAttempts = 0
+$PingTestAttempts = 0
 function TestOnlineRecurse {
-    if (!(Test-Connection -ComputerName $PC -Count 1)) {
+    try { 
+        Test-Connection -ComputerName $PC -Count 1 -ErrorAction Stop
+        Log "INFO: $PC Online after reboot"
+    } 
+    catch {
         Log "WARNING: $PC not detected online.  Will try again in 15 seconds"
-        $script:TestAttempts += 1
-        Log "INFO: Ping Attempt $script:TestAttempts of 5"
-        if ($script:TestAttempts -lt 5) {
+        $script:PingTestAttempts += 1
+        Log "INFO: Ping Attempt $script:PingTestAttempts of 5"
+        if ($script:PingTestAttempts -lt 5) {
             Start-Sleep -Seconds 15
             TestOnlineRecurse
         }
         else {
             Log "FATAL: $PC did not come back online"
-            Quit
+            Exit 1
         }
     }
 }
+
+
+$WinRM_TestAttempts = 0
+function TestRemotingRecurse {
+    $ReturnsZero = Invoke-Command -ComputerName $PC { 0 }
+    if ($ReturnsZero -ne '0') {
+        Log "WARNING: WinRM on $PC not ready yet.  Will try again in 15 seconds"
+        $script:WinRM_TestAttempts += 1
+        Log "INFO: WinRM Attempt $script:WinRM_TestAttempts of 5"
+        if ($script:WinRM_TestAttempts -lt 5) {
+            ping $PC -n 1 # refresh the IP / ARP table
+            Start-Sleep -Seconds 15
+            TestRemotingRecurse
+        }
+        else {
+            Log "FATAL: $PC WinRM did not recover"
+            Exit 1
+        }
+    }
+    else {
+        Log "INFO: $PC WinRM tested sucessfully"
+    }
+}
+
+Start-Sleep -Seconds 60
+Log 'DEBUG: Sleeping for 60 to wait for reboot'
+
 TestOnlineRecurse
+TestRemotingRecurse
 
 
 #### Verify DF Status ####
@@ -203,15 +233,13 @@ Invoke-Command -ComputerName $PC -ScriptBlock {
 }
 
 if ($DFStatus -eq $DesiredState) {
-    $ScriptResult = $true
     Log "INFO: Sucessfully rebooted $DFStatus"
+    Exit 0
 }
 else {
-    $ScriptResult = $false
     Log "WARNING: Could not verify operation.  State is $DFStatus, Desired State is $DesiredState"
     Log "INFO: Password may be wrong"
     Log 'INFO: PC must be frozen first in order to boot into Thawed or Thawed and Locked states'
+    Exit 1
 }
 
-# Don't change this formatting, it's read by main.py later on
-Log "DeepFreezeActionResult: $ScriptResult"
