@@ -7,7 +7,7 @@ from subprocess import run
 import schedule
 import yaml
 import smtplib
-import inputValues
+import df_input_values
 import df_messages
 from time import sleep
 
@@ -73,12 +73,12 @@ def submit():
     print("Desired State: ", state)
     root.destroy()
 
-    inputValues.pc_name = pc_name_value
-    inputValues.requestor_email = email_value
+    df_input_values.pc_name = pc_name_value
+    df_input_values.requestor_email = email_value
 #   inputValues.date = date_value
-    inputValues.time = time_value
-    inputValues.force = force_value
-    inputValues.state = state
+    df_input_values.time = time_value
+    df_input_values.force = force_value
+    df_input_values.state = state
 
 
 # Submit button
@@ -94,7 +94,7 @@ FOOTER = df_messages.make_footer(
     config['Emails']['Support_Email']
 )
 
-EMAIL_TO = [f'{inputValues.requestor_email}',
+EMAIL_TO = [f'{df_input_values.requestor_email}',
             f'{config["Emails"]["Email_CC"]}']
 
 SMTP_PASSWORD = config['Emails']['SMTP_Password']
@@ -109,6 +109,7 @@ def SendEmail(
     try:
         smtpObj = smtplib.SMTP(config['Emails']['SMTP_Server'])
 
+        # FIXME: make it so there's no plain-text password stored anywhere
         if SMTP_PASSWORD is not None and SMTP_PASSWORD != '':
             smtpObj.login(config['Emails']['SMTP_User'], SMTP_PASSWORD)
 
@@ -120,34 +121,37 @@ def SendEmail(
 
 #### Confirmation ####
 
-def CheckResult(pwsh_exit_code) -> str('result_email-body' or None):
+def FormatEmailBody(pwsh_exit_code) -> str('result_email-body' or None):
 
     if pwsh_exit_code == 0:
         Result_email_body = df_messages.make_success_email(
             config['Emails']['From_Name'],
-            inputValues.requestor_email,
-            inputValues.pc_name,
-            inputValues.state,
+            df_input_values.requestor_email,
+            df_input_values.pc_name,
+            df_input_values.state,
             FOOTER
         )
         return (Result_email_body)
 
     elif pwsh_exit_code == 1:
         with open(
-            f'{config["Utils"]["Log_Directory"]}/{inputValues.pc_name}.txt',
+            f'{config["Utils"]["Log_Directory"]}/{df_input_values.pc_name}.txt',
             'r',
             encoding='UTF-8'
         ) as f:
 
             log_data = f.read().strip()
+            # to get only the most recent data
+            this_log_data = log_data.split(
+                '---------------------------------------')[-1]
 
         Result_email_body = df_messages.make_failure_email(
             config['Emails']['From_Name'],
-            inputValues.requestor_email,
-            inputValues.pc_name,
-            inputValues.state,
+            df_input_values.requestor_email,
+            df_input_values.pc_name,
+            df_input_values.state,
             FOOTER,
-            log_data
+            this_log_data
         )
         return (Result_email_body)
 
@@ -164,11 +168,11 @@ def main():
         [
             'pwsh.exe',  # powershell 7, needed for password decrypt
             pwshExecute_script_path,
-            inputValues.pc_name,
-            inputValues.state,
+            df_input_values.pc_name,
+            df_input_values.state,
             config['Utils']['Encryped_PW_Location'],
             config['Utils']['Log_Directory'],
-            str(inputValues.force),
+            str(df_input_values.force),
         ]
     )
     '''
@@ -179,7 +183,7 @@ def main():
         str:Force 
     '''
 
-    result_email_body = CheckResult(pwsh_result.returncode)
+    result_email_body = FormatEmailBody(pwsh_result.returncode)
 
     SendEmail(
         EMAIL_TO,
@@ -191,16 +195,16 @@ def main():
 
 
 # Send 'action scheduled' email
-FORCE_DESCRIPTION = df_messages.make_force_description(inputValues.force)
+FORCE_DESCRIPTION = df_messages.make_force_description(df_input_values.force)
 
 scheduled_email = df_messages.make_schedule_email(
     FORCE_DESCRIPTION,
     FOOTER,
     config['Emails']['From_Name'],
-    inputValues.requestor_email,
-    inputValues.pc_name,
-    inputValues.state,
-    inputValues.time
+    df_input_values.requestor_email,
+    df_input_values.pc_name,
+    df_input_values.state,
+    df_input_values.time
 )
 
 SendEmail(
@@ -211,7 +215,7 @@ SendEmail(
 
 
 #### Schedule Stuff ####
-schedule.every().day.at(inputValues.time).do(main)
+schedule.every().day.at(df_input_values.time).do(main)
 
 while True:
     schedule.run_pending()
