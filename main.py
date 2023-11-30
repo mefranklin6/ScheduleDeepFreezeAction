@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import tkinter as tk
 from tkinter import ttk
+
 # from tkcalendar import DateEntry
 from subprocess import run
 import schedule
@@ -11,12 +12,12 @@ import df_input_values
 import df_messages
 from time import sleep
 
-with open('Config.yaml', 'r') as file:
+with open("Config.yaml", "r") as file:
     config = yaml.safe_load(file)
 
 
 # replace with full path if having issues
-pwshExecute_script_path = './Execute_DF_Action.ps1'
+pwshExecute_script_path = "./Execute_DF_Action.ps1"
 
 ##### GUI STUFF #####
 root = tk.Tk()
@@ -60,14 +61,14 @@ status.grid(row=6, column=1)
 def submit():
     pc_name_value = pc_name.get()
     email_value = email.get()
-#   date_value = date.get_date()
-    time_value = f'{hour.get()}:{minute.get()}'
+    #   date_value = date.get_date()
+    time_value = f"{hour.get()}:{minute.get()}"
     force_value = force.get()
     state = status.get()
 
     print("PC Name: ", pc_name_value)
     print("Email: ", email_value)
-#   print("Date: ", date_value)
+    #   print("Date: ", date_value)
     print("Time: ", time_value)
     print("Force:", force_value)
     print("Desired State: ", state)
@@ -75,7 +76,7 @@ def submit():
 
     df_input_values.pc_name = pc_name_value
     df_input_values.requestor_email = email_value
-#   inputValues.date = date_value
+    #   inputValues.date = date_value
     df_input_values.time = time_value
     df_input_values.force = force_value
     df_input_values.state = state
@@ -90,106 +91,95 @@ root.mainloop()
 #### Email Stuff ####
 
 FOOTER = df_messages.make_footer(
-    config['Emails']['Support_Name'],
-    config['Emails']['Support_Email']
+    config["Emails"]["Support_Name"], config["Emails"]["Support_Email"]
 )
 
-EMAIL_TO = [f'{df_input_values.requestor_email}',
-            f'{config["Emails"]["Email_CC"]}']
+EMAIL_TO = [f"{df_input_values.requestor_email}", f'{config["Emails"]["Email_CC"]}']
 
-SMTP_PASSWORD = config['Emails']['SMTP_Password']
+SMTP_PASSWORD = config["Emails"]["SMTP_Password"]
 
 
-def SendEmail(
-    email_to,
-    email_from,
-    email_msg
-):
-
+def SendEmail(email_to, email_from, email_msg):
     try:
-        smtpObj = smtplib.SMTP(config['Emails']['SMTP_Server'])
+        smtpObj = smtplib.SMTP(config["Emails"]["SMTP_Server"])
 
         # FIXME: make it so there's no plain-text password stored anywhere
-        if SMTP_PASSWORD is not None and SMTP_PASSWORD != '':
-            smtpObj.login(config['Emails']['SMTP_User'], SMTP_PASSWORD)
+        if SMTP_PASSWORD is not None and SMTP_PASSWORD != "":
+            smtpObj.login(config["Emails"]["SMTP_User"], SMTP_PASSWORD)
 
         smtpObj.sendmail(email_from, email_to, email_msg)
-        print('INFO: Successfully sent email')
+        print("INFO: Successfully sent email")
     except Exception as e:
-        print(f'ERROR: unable to send email, {e}')
+        print(f"ERROR: unable to send email, {e}")
 
 
 #### Confirmation ####
 
-def FormatEmailBody(pwsh_exit_code) -> str('result_email-body' or None):
 
+def FormatEmailBody(pwsh_exit_code) -> str("result_email-body" or None):
     if pwsh_exit_code == 0:
         Result_email_body = df_messages.make_success_email(
-            config['Emails']['From_Name'],
-            df_input_values.requestor_email,
-            df_input_values.pc_name,
-            df_input_values.state,
-            FOOTER
-        )
-        return (Result_email_body)
-
-    elif pwsh_exit_code == 1:
-        with open(
-            f'{config["Utils"]["Log_Directory"]}/{df_input_values.pc_name}.txt',
-            'r',
-            encoding='UTF-8'
-        ) as f:
-
-            log_data = f.read().strip()
-            # to get only the most recent data
-            this_log_data = log_data.split(
-                '---------------------------------------')[-1]
-
-        Result_email_body = df_messages.make_failure_email(
-            config['Emails']['From_Name'],
+            config["Emails"]["From_Name"],
             df_input_values.requestor_email,
             df_input_values.pc_name,
             df_input_values.state,
             FOOTER,
-            this_log_data
         )
-        return (Result_email_body)
+        return Result_email_body
+
+    elif pwsh_exit_code == 1:
+        with open(
+            f'{config["Utils"]["Log_Directory"]}/{df_input_values.pc_name}.txt',
+            "r",
+            encoding="UTF-8",
+        ) as f:
+            log_data = f.read().strip()
+            # to get only the most recent data
+            this_log_data = log_data.split("---------------------------------------")[
+                -1
+            ]
+
+        Result_email_body = df_messages.make_failure_email(
+            config["Emails"]["From_Name"],
+            df_input_values.requestor_email,
+            df_input_values.pc_name,
+            df_input_values.state,
+            FOOTER,
+            this_log_data,
+        )
+        return Result_email_body
 
     else:
-        print('UNCAUGHT EXCEPTION')
-        return (None)
+        print("UNCAUGHT EXCEPTION")
+        return None
 
 
 #### Actions ####
 
-def main():
 
+def main():
     pwsh_result = run(
         [
-            'pwsh.exe',  # powershell 7, needed for password decrypt
+            "pwsh.exe",  # powershell 7, needed for password decrypt
             pwshExecute_script_path,
             df_input_values.pc_name,
             df_input_values.state,
-            config['Utils']['Encryped_PW_Location'],
-            config['Utils']['Log_Directory'],
+            config["Utils"]["Encryped_PW_Location"],
+            config["Utils"]["Log_Directory"],
             str(df_input_values.force),
         ]
     )
-    '''
+    """
         str:PC
         str:DesiredState
         str:EncryptedPasswordLocation
         str:LogLocation
         str:Force 
-    '''
+    """
 
     result_email_body = FormatEmailBody(pwsh_result.returncode)
 
-    SendEmail(
-        EMAIL_TO,
-        config['Emails']['Email_From'],
-        result_email_body
-    )
+    SendEmail(EMAIL_TO, config["Emails"]["Email_From"], result_email_body)
 
     return exit()
 
@@ -200,18 +190,14 @@ FORCE_DESCRIPTION = df_messages.make_force_description(df_input_values.force)
 scheduled_email = df_messages.make_schedule_email(
     FORCE_DESCRIPTION,
     FOOTER,
-    config['Emails']['From_Name'],
+    config["Emails"]["From_Name"],
     df_input_values.requestor_email,
     df_input_values.pc_name,
     df_input_values.state,
-    df_input_values.time
+    df_input_values.time,
 )
 
-SendEmail(
-    EMAIL_TO,
-    config['Emails']['Email_From'],
-    scheduled_email
-)
+SendEmail(EMAIL_TO, config["Emails"]["Email_From"], scheduled_email)
 
 
 #### Schedule Stuff ####
