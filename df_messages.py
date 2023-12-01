@@ -1,39 +1,34 @@
-
 ###############################################################################
 
+
 def make_footer(support_name, support_email):
-    footer = f'''This is an automated email from {support_name}
-Please contact {support_email} for any changes or issues'''
+    footer = f"""This is an automated email from {support_name}
+Please contact {support_email} for any changes or issues"""
     return footer
+
 
 ###############################################################################
 
 
 def make_force_description(force: bool):
     if force == False:
-        force_description = '''Please make sure all programs on the PC are closed, including Zoom, PowerPoint, etc.
+        force_description = """Please make sure all programs on the PC are closed, including Zoom, PowerPoint, etc.
 To prevent disruption, automatic action will not be taken if there are signs of user activity.
-To skip checking, please re-schedule and set the 'Force' flag.'''
+To skip checking, please re-schedule and set the 'Force' flag."""
 
     if force == True:
-        force_description = '''Warning: Force flag is set.
-Reboot commands will be sent REGARDLESS of user activity on the machine'''
+        force_description = """Warning: Force flag is set.
+Reboot commands will be sent REGARDLESS of user activity on the machine"""
 
     return force_description
+
 
 ###############################################################################
 
 
 def make_schedule_email(
-        force_description,
-        footer,
-        from_name,
-        to_email,
-        pc,
-        desired_state,
-        scheduled_time
+    force_description, footer, from_name, to_email, pc, desired_state, scheduled_time
 ):
-
     scheduled_email = f"""From: {from_name}
 To: {to_email}
 Subject: Deep Freeze Action Scheduled
@@ -50,6 +45,7 @@ You will receive a follow up email once action has been taken.
 {footer}
 """
     return scheduled_email
+
 
 ###############################################################################
 
@@ -68,17 +64,11 @@ Has Sucessfully Rebooted {confirmed_state}
 """
     return success_email
 
+
 ###############################################################################
 
 
-def make_failure_email(
-        from_name,
-        to_email,
-        pc,
-        desired_state,
-        footer,
-        log_data
-):
+def make_failure_email(from_name, to_email, pc, desired_state, footer, log_data):
     failure_email = f"""From: {from_name}
 To: {to_email}
 Subject: Deep Freeze Action FAILURE
@@ -98,5 +88,6 @@ Log:
 {footer}
 """
     return failure_email
+
 
 ###############################################################################

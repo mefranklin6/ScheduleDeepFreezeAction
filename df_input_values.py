@@ -1,12 +1,12 @@
 # Values from GUI
 
-pc_name = ''
-requestor_email = ''
-date = '' # not used yet
-time = ''
+pc_name = ""
+requestor_email = ""
+date = ""  # not used yet
+time = ""
 force = False
-state = ''
+state = ""
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     pass
