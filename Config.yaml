@@ -6,7 +6,6 @@ Emails:
   Support_Name : 'Your Help Desk'
   SMTP_Server : 'smtp.yourorg.com'
   SMTP_User : ''
-  SMTP_Password : '' 
 
 Utils:
   Log_Directory : 'C:\Temp'
