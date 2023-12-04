@@ -15,7 +15,8 @@ If you manage PCs with Faronics Deep Freeze installed, this tool allows you to s
 - **From_Name**: If using a service account, you can use something like 'Deep Freeze Bot'.
 - **Support_Email**: Who to contact if the user has questions or wants changes. This might be your help desk.
 - **Support_Name**: This might be 'Help Desk'.
-- **SMTP**: Should be straightforward. If you don't use authentication (you should), then leave empty strings.
+- **SMTP_User**: Likely the service account for your email bot.
+- **SMTP_Auth**: 'Yes' or 'no'.  If set to Yes, the script will prompt you for your password in the console.
 - **Log_Directory**: Where you want logs to save. This can be UNC or local. I like C:/Temp.
 - **Encrypted_PW_Location**: This is the path set in `PasswordEncrypter.py`.  Default is 'C:\Temp\DeepFreezePassword.txt'
 
@@ -51,4 +52,5 @@ Press submit after you enter the above info. You will be presented with a Python
 
 Because of a limitation in the Deep Freeze CLI, there are brief times that the Deep Freeze password is loaded into RAM as a plain-text string. That also means that the encrypted password stored on disk can be decrypted into plain-text, but only by the user that encrypted the password, and only on the machine that the password was originally encrypted. The password is sent over the wire encrypted, as all things are with WinRM, but is also briefly in RAM as plain-text on the target. Therefore please note that the potential for a password to be read by an unauthorized party is very small but not zero.
 
-TODO: Encrypt SMTP password.  Don't put your production SMTP server password in the config!  This is in the testing stage only.
+Furthermore, if you use SMTP authentication, this script will securely prompt you for your password every time.  If this is cumbersome, please use a secure method of your choosing.
+

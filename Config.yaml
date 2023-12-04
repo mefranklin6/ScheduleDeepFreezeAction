@@ -5,7 +5,8 @@ Emails:
   Support_Email : 'helpdesk@example.com'
   Support_Name : 'Your Help Desk'
   SMTP_Server : 'smtp.yourorg.com'
-  SMTP_User : ''
+  SMTP_User : 'helpdesk'
+  SMTP_Auth : Yes
 
 Utils:
   Log_Directory : 'C:\Temp'

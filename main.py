@@ -11,6 +11,7 @@ import smtplib
 import df_input_values
 import df_messages
 from time import sleep
+from getpass import getpass
 
 with open("Config.yaml", "r") as file:
     config = yaml.safe_load(file)
@@ -96,16 +97,16 @@ FOOTER = df_messages.make_footer(
 
 EMAIL_TO = [f"{df_input_values.requestor_email}", f'{config["Emails"]["Email_CC"]}']
 
-SMTP_PASSWORD = config["Emails"]["SMTP_Password"]
+SMTP_AUTH = config["Emails"]["SMTP_Auth"]
 
 
 def SendEmail(email_to, email_from, email_msg):
     try:
         smtpObj = smtplib.SMTP(config["Emails"]["SMTP_Server"])
 
-        # FIXME: make it so there's no plain-text password stored anywhere
-        if SMTP_PASSWORD is not None and SMTP_PASSWORD != "":
-            smtpObj.login(config["Emails"]["SMTP_User"], SMTP_PASSWORD)
+        if SMTP_AUTH == True:
+            smtpObj.login(config["Emails"]["SMTP_User"], password=getpass('SMTP Password:'))
+            # Or use your own method of secure password retrieval to avoid prompts every time
 
         smtpObj.sendmail(email_from, email_to, email_msg)
         print("INFO: Successfully sent email")
