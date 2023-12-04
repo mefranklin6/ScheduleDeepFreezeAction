@@ -3,15 +3,19 @@ Param(
     [string]$PC,
 
     [Parameter(Mandatory = $true)]
+    [ValidateSet('Frozen', 'Thawed', 'Thawed and Locked')]
     [string]$DesiredState,
 
-    [Parameter(Mandatory = $true)]        # ignore intellisense security warnings...
-    [string]$EncryptedPasswordLocation, # this is the encryped pw location, not the pw
+    [Parameter(Mandatory = $true)]        
+    [ValidateScript({ Test-Path $_ })]  #Ignore intellisense warnings
+    [string]$EncryptedPasswordLocation, # This is not the password but the encrypted file location
 
     [Parameter(Mandatory = $true)]
+    [ValidateScript({ Test-Path $_ })]
     [string]$LogLocation,
 
     [Parameter(Mandatory = $true)]
+    [ValidateSet('True', 'False')]
     [string]$Force
 )
 
@@ -53,7 +57,7 @@ if ($PSVersionTable.PSVersion.Major -lt 7) {
 }
 
 if (!(Test-Connection -ComputerName $PC -Count 1)) {
-    Log "FATAL: $PC is not online or wrong name!"
+    Log "FATAL: $PC failed Test-Connection"
     Exit 1
 }
 
