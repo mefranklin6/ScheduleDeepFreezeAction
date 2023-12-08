@@ -18,11 +18,8 @@ If you manage PCs with Faronics Deep Freeze installed, this tool allows you to s
 - **SMTP_User**: Likely the service account for your email bot.
 - **SMTP_Auth**: 'Yes' or 'no'.  If set to Yes, the script will prompt you for your password in the console.
 - **Log_Directory**: Where you want logs to save. This can be UNC or local. I like C:/Temp.
-- **Encrypted_PW_Location**: This is the path set in `PasswordEncrypter.py`.  Default is 'C:\Temp\DeepFreezePassword.txt'
+- **Encrypted_PW_Location**:  Where the encrypted password will be stored on disk.  If not found, you will be prompted to enter one in the console. Default is 'C:\Temp\DeepFreezePassword.txt'
 
-### Encrypt Your DeepFreeze CLI Password
-
-Run `PasswordEncrypter.ps1` before you run anything else. Run this again whenever your DeepFreeze CLI password changes.
 
 ### How To Use:
 
@@ -47,6 +44,12 @@ Press submit after you enter the above info. You will be presented with a Python
     - `pip3 install pyYAML`
 - Schedule library for python
     - `pip3 install schedule`
+
+
+## Updating the Encrypted Password
+To update the encrypted password that is stored on disk,
+simply delete the password file.  You can find the file at the location you specified in the config under `Encrypted_PW_Location`. You will receive a prompt the next
+time you schedule an action for a new password.
 
 ## Security Considerations:
 
