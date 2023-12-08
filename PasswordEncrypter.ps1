@@ -1,3 +1,8 @@
+Param(
+    [Parameter(Mandatory = $true)]
+    [string]$DeepFreezePasswordStore
+)
+
 <# 
 
 Run this to set (new) passwords.
@@ -13,8 +18,6 @@ and this encrypted password can be decrypted back to plain-text)
 
 #>
 
-# Location that the encryped file gets saved to
-$DeepFreezePasswordStore = 'C:\Temp\DeepFreezePassword.txt'
 
 Remove-Item $DeepFreezePasswordStore
 
@@ -35,14 +38,13 @@ if (Test-Path $DeepFreezePasswordStore) {
 }
 
 
-<# 
+ 
 
-Decrypt example:
-Requires Powershell 7+
+#Decrypt example:
+# Requires Powershell 7+
 
 $loadedEncryptedSecret = Get-Content -Path $DeepFreezePasswordStore
 $loadedSecureString = ConvertTo-SecureString -String $loadedEncryptedSecret
 $decryptedSecret = (New-Object PSCredential "user", $loadedSecureString).GetNetworkCredential().Password
 Write-Output $decryptedSecret
 
-#>
