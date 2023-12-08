@@ -10,5 +10,5 @@ Emails:
 
 Utils:
   Log_Directory : 'C:\Temp'
-  Encryped_PW_Location : '.\DeepFreezePassword.txt'
+  Encryped_PW_Location : 'C:\Temp\DeepFreezePassword.txt'
   
