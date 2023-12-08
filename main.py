@@ -12,9 +12,23 @@ import df_input_values
 import df_messages
 from time import sleep
 from getpass import getpass
+from os import path
 
-with open("Config.yaml", "r") as file:
+with open("ProdConfig.yaml", "r") as file:
     config = yaml.safe_load(file)
+
+def CheckPasswordFile():
+    if not path.isfile(config['Utils']['Encryped_PW_Location']):
+        print('WARNING: Encrypted password not found, creating new one')
+        
+        run(
+            [
+            "pwsh.exe",
+            "./PasswordEncrypter.ps1",
+            config['Utils']['Encryped_PW_Location'],
+            ]
+        )
+CheckPasswordFile()
 
 
 # replace with full path if having issues
@@ -159,6 +173,7 @@ def FormatEmailBody(pwsh_exit_code) -> str("result_email-body" or None):
 
 
 def main():
+
     pwsh_result = run(
         [
             "pwsh.exe",  # powershell 7, needed for password decrypt
