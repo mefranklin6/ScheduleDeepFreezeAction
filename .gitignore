@@ -1,3 +1,4 @@
 DeepFreezePassword.txt
 Config.yaml
 *.pyc
+*.yaml
