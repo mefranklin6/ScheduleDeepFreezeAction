@@ -17,17 +17,20 @@ from os import path
 with open("ProdConfig.yaml", "r") as file:
     config = yaml.safe_load(file)
 
+
 def CheckPasswordFile():
-    if not path.isfile(config['Utils']['Encryped_PW_Location']):
-        print('WARNING: Encrypted password not found, creating new one')
-        
+    if not path.isfile(config["Utils"]["Encryped_PW_Location"]):
+        print("WARNING: Encrypted password not found, creating new one")
+
         run(
             [
-            "pwsh.exe",
-            "./PasswordEncrypter.ps1",
-            config['Utils']['Encryped_PW_Location'],
+                "pwsh.exe",
+                "./PasswordEncrypter.ps1",
+                config["Utils"]["Encryped_PW_Location"],
             ]
         )
+
+
 CheckPasswordFile()
 
 
@@ -119,7 +122,9 @@ def SendEmail(email_to, email_from, email_msg):
         smtpObj = smtplib.SMTP(config["Emails"]["SMTP_Server"])
 
         if SMTP_AUTH == True:
-            smtpObj.login(config["Emails"]["SMTP_User"], password=getpass('SMTP Password:'))
+            smtpObj.login(
+                config["Emails"]["SMTP_User"], password=getpass("SMTP Password:")
+            )
             # Or use your own method of secure password retrieval to avoid prompts every time
 
         smtpObj.sendmail(email_from, email_to, email_msg)
@@ -173,7 +178,6 @@ def FormatEmailBody(pwsh_exit_code) -> str("result_email-body" or None):
 
 
 def main():
-
     pwsh_result = run(
         [
             "pwsh.exe",  # powershell 7, needed for password decrypt
