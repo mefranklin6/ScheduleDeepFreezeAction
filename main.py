@@ -14,7 +14,7 @@ from time import sleep
 from getpass import getpass
 from os import path
 
-with open("ProdConfig.yaml", "r") as file:
+with open("Config.yaml", "r") as file:
     config = yaml.safe_load(file)
 
 
