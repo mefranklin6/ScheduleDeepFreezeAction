@@ -43,8 +43,8 @@ if (Test-Path $DeepFreezePasswordStore) {
 #Decrypt example:
 # Requires Powershell 7+
 
-$loadedEncryptedSecret = Get-Content -Path $DeepFreezePasswordStore
-$loadedSecureString = ConvertTo-SecureString -String $loadedEncryptedSecret
-$decryptedSecret = (New-Object PSCredential "user", $loadedSecureString).GetNetworkCredential().Password
-Write-Output $decryptedSecret
+#$loadedEncryptedSecret = Get-Content -Path $DeepFreezePasswordStore
+#$loadedSecureString = ConvertTo-SecureString -String $loadedEncryptedSecret
+#$decryptedSecret = (New-Object PSCredential "user", $loadedSecureString).GetNetworkCredential().Password
+#Write-Output $decryptedSecret
 
